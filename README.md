@@ -108,8 +108,13 @@ python main.py
 
 | 이름 | 역할 |
 | --- | --- |
-| `MacCalc.calculate_2d_array(pattern, filter)` | MAC 연산 한 번 |
+| `MacCalc.check_size(pattern, filter)` | 패턴과 필터의 모양이 같은지 확인 |
+| `MacCalc.calculate_2d_array(pattern, filter)` | 2차원 그대로 MAC 연산 한 번 |
 | `MacCalc.measure_time_2d_array(pattern, filter)` | 같은 연산을 반복해 평균 시간 측정 |
+| `MacCalc.flatten_2d_array(matrix)` | 2차원 배열을 1차원으로 펴기 |
+| `MacCalc.calculate_flat_array(flat_pattern, flat_filter)` | 1차원끼리 MAC 연산 한 번 |
+| `MacCalc.calculate_1d_array(pattern, filter)` | 1차원으로 펴서 MAC 연산 한 번 (보너스) |
+| `MacCalc.measure_time_1d_array(pattern, filter)` | 1차원 방식의 평균 시간 측정 (보너스) |
 | `REPEAT_COUNT` | 측정 반복 횟수 (10회) |
 
 `calculate_2d_array`는 NumPy 같은 라이브러리를 쓰지 않고 이중 `for` 문으로 직접 계산합니다.
@@ -126,9 +131,34 @@ for row in range(len(pattern)):
 
 시간 측정도 같은 클래스에 넣었습니다. 재는 대상(MAC 연산)과 재는 도구가 한곳에 있어야
 계산 방식을 바꿔도 측정 조건이 어긋나지 않기 때문입니다.
-메서드 이름에 `_2d_array`를 붙여 둔 것도 같은 이유입니다. 보너스 과제인 1차원 배열
-최적화 버전은 `calculate_1d_array` / `measure_time_1d_array`를 같은 클래스에 나란히
-추가하면, 똑같은 `REPEAT_COUNT`와 똑같은 측정 방식으로 두 방법을 비교할 수 있습니다.
+메서드 이름에 `_2d_array`를 붙여 둔 것도 같은 이유입니다.
+
+#### 1차원 배열 방식 (보너스)
+
+2차원 배열은 값 하나를 꺼낼 때마다 `pattern[row]`로 행 목록을 찾고 다시 `[col]`로 값을
+찾는, 두 단계를 거칩니다. 미리 한 줄로 펴 두면 `flat[i]` 한 단계로 끝나고 안쪽 반복문도
+사라집니다.
+
+```
+flat_pattern = MacCalc.flatten_2d_array(pattern)   # [[1, 2], [3, 4]] -> [1, 2, 3, 4]
+flat_filter = MacCalc.flatten_2d_array(filter)
+
+for i in range(len(flat_pattern)):
+    total = total + flat_pattern[i] * flat_filter[i]
+```
+
+`calculate_1d_array`는 받는 값과 돌려주는 값이 `calculate_2d_array`와 똑같아서
+`main.py`를 고치지 않고 그대로 바꿔 끼울 수 있습니다.
+
+한 가지 주의할 점이 있습니다. 1차원으로 펴면 행 구분이 사라져서, 예를 들어 2x3과 3x2는
+둘 다 값이 6개라 그냥 펴면 크기 오류를 놓칩니다. 그래서 펴기 전에 `check_size`로
+2차원 방식과 **같은 기준, 같은 오류 메시지**로 모양을 먼저 확인합니다.
+이 검사는 두 방식이 공유하므로 한쪽만 고쳐져 기준이 어긋나는 일이 없습니다.
+
+측정에서 1차원으로 펴는 일은 계산을 시작하기 전에 한 번만 하면 되는 준비 작업이라,
+파일 읽기와 마찬가지로 측정 대상에서 뺐습니다. 양쪽 모두 똑같은 `REPEAT_COUNT`로
+'MAC 연산에 걸리는 시간' 하나만 재기 때문에 두 방법을 그대로 비교할 수 있습니다.
+(201x201 기준 약 2.24ms → 2.01ms)
 
 ### 2. 라벨 정규화 (`data_loader.py`)
 
